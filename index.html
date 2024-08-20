@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Trello Card</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f9f6f7;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            background-color: #fff;
+            padding: 20px 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #d65f77;
+            margin-bottom: 20px;
+        }
+        input[type="text"], input[type="password"] {
+            padding: 10px;
+            width: 80%;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #d65f77;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #c14f67;
+        }
+        p#statusMessage {
+            margin-top: 15px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Create a New Trello Card</h1>
+        <input type="text" id="messageInput" placeholder="Enter your HoneyDo">
+        <input type="password" id="secretKeyInput" placeholder="Because of">
+        <button id="createCardButton">Add to Honey's List</button>
+        <p id="statusMessage"></p>
+    </div>
+
+    <script>
+        document.getElementById('createCardButton').addEventListener('click', function() {
+            const message = document.getElementById('messageInput').value;
+            const secretKey = document.getElementById('secretKeyInput').value;
+
+            if (message.trim() === '' || secretKey.trim() === '') {
+                document.getElementById('statusMessage').innerText = 'Please enter both a message and a secret key.';
+                return;
+            }
+
+            const apiKey = '145b116b83f040ae7aec2566c6934f7d';
+            const encryptedToken = 'U2FsdGVkX1+yxXAbaoOCWSqztueYSx18kkg6NYjJYN9CcRuC4KgtYHqM3Y0IfIq2ocJ6d99dD2P7uFH9ffZBYwPNqu/ogMmKatO+H9PosuvOlLOuwpLnoWIqljwWj6pu'; // Replace with your actual encrypted token
+
+            // Decrypt the token using the secret key provided by the user
+            try {
+                const bytes = CryptoJS.AES.decrypt(encryptedToken, secretKey);
+                const apiToken = bytes.toString(CryptoJS.enc.Utf8);
+
+                if (!apiToken) throw new Error('Invalid secret key.');
+
+                const listId = '62b2c0eddd262b5a0a697532';
+                const url = `https://api.trello.com/1/cards?key=${apiKey}&token=${apiToken}&idList=${listId}&name=${encodeURIComponent(message)}`;
+
+                fetch(url, {
+                    method: 'POST'
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.id) {
+                        document.getElementById('statusMessage').innerText = 'Your task was added to the list!';
+                        document.getElementById('messageInput').value = '';
+                        document.getElementById('secretKeyInput').value = '';
+                    } else {
+                        document.getElementById('statusMessage').innerText = 'Oh no! Something went wrong.';
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('statusMessage').innerText = `Error: ${error.message}`;
+                    console.error('Error:', error);
+                });
+
+            } catch (error) {
+                document.getElementById('statusMessage').innerText = 'Invalid secret key provided.';
+                console.error('Error:', error);
+            }
+        });
+    </script>
+</body>
+</html>
+
